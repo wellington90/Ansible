@@ -1,44 +1,34 @@
 ---
-- name: Install Jenkins on multiple hosts
-  hosts: all
+ - hosts: jenkins
+   become: yes
 
-  vars:
-    jenkins_version: 2.277.3
-    jenkins_port: 8080
-
-  tasks:
-    - name: Add Jenkins repository key
-      apt_key:
-        url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
-        state: present
-
-    - name: Add Jenkins repository
-      apt_repository:
-        repo: deb https://pkg.jenkins.io/debian-stable binary/
-        state: present
-        filename: jenkins
-        update_cache: yes
-        cache_valid_time: 3600
-
-    - name: Install Jenkins
+   tasks:
+    - name: Instalacao do Java
       apt:
-        name: jenkins={{ jenkins_version }}
+        name: openjdk-11-jdk
         state: present
         update_cache: yes
 
-    - name: Start Jenkins service
-      service:
-        name: jenkins
-        state: started
+    - name: chave repositorio Jenkins
+      apt_key:
+       url: https://pkg.jenkins.io/debian-stable/jenkins.io.key
+       state: present
 
-    - name: Enable Jenkins service on boot
-      service:
-        name: jenkins
-        enabled: yes
+    - name: Adicionando o repositorio do Jenkins'
+      apt_repository:
+       repo: deb https://pkg.jenkins.io/debian-stable binary/
+       state: present
 
-    - name: Open Jenkins port
-      ufw:
-        rule: allow
-        port: "{{ jenkins_port }}"
-        proto: tcp
-        comment: "Allow Jenkins port"
+    - name: Instalacao do Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    - name: Obtendo a chave initialAdminPassword do Jenkins
+      command: cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: chave
+
+    - name: Exibindo a chave initialAdminPassword
+      ansible.builtin.debug:
+        msg: "{{ chave.stdout }}"
